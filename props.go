@@ -60,3 +60,25 @@ func DivideIntoGroups[D any](d []D, perGroupNum int) [][]D {
 	}
 	return groups
 }
+
+func DivideMapIntoGroups[K comparable, D any](d map[K]D, perGroupNum int) []map[K]D {
+	n := len(d) / perGroupNum
+	if len(d)%perGroupNum != 0 {
+		n++
+	}
+	groups := make([]map[K]D, n)
+	m := make(map[K]D)
+	var i int
+	for k, v := range d {
+		i++
+		if i%perGroupNum == 0 {
+			groups = append(groups, m)
+			m = make(map[K]D)
+		}
+		m[k] = v
+		if i == len(d) {
+			groups = append(groups, m)
+		}
+	}
+	return groups
+}

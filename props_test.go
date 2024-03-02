@@ -115,3 +115,68 @@ func TestDivideIntoGroups(t *testing.T) {
 		})
 	}
 }
+
+func TestDivideMapIntoGroups(t *testing.T) {
+	tests := map[string]struct {
+		input       map[int]bool
+		groupSize   int
+		expected    []map[int]bool
+		expectPanic bool
+	}{
+		"regular division": {
+			input:     map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true, 6: true},
+			groupSize: 2,
+			expected:  []map[int]bool{{1: true, 2: true}, {3: true, 4: true}, {5: true, 6: true}},
+		},
+		"with leftover": {
+			input:     map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true},
+			groupSize: 2,
+			expected:  []map[int]bool{{1: true, 2: true}, {3: true, 4: true}, {5: true}},
+		},
+		"single group": {
+			input:     map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true},
+			groupSize: 5,
+			expected:  []map[int]bool{{1: true, 2: true, 3: true, 4: true, 5: true}},
+		},
+		"empty slice": {
+			input:     map[int]bool{},
+			groupSize: 2,
+			expected:  []map[int]bool{},
+		},
+		"single element": {
+			input:     map[int]bool{1: true},
+			groupSize: 2,
+			expected:  []map[int]bool{{1: true}},
+		},
+		"invalid group size": {
+			input:       map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true},
+			groupSize:   0,
+			expectPanic: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil && !tc.expectPanic {
+					t.Errorf("unexpected panic")
+				} else if r == nil && tc.expectPanic {
+					t.Errorf("expected panic, got none")
+				}
+			}()
+			result := DivideMapIntoGroups(tc.input, tc.groupSize)
+			for k, v := range tc.input {
+				var has bool
+				for _, m := range result {
+					if reflect.DeepEqual(m[k], v) {
+						has = true
+						break
+					}
+				}
+				if !has {
+					t.Errorf("can not find %v: %v in grouped result", k, v)
+				}
+			}
+		})
+	}
+}
