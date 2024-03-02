@@ -1,6 +1,9 @@
 package props
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 type myErr struct {
 }
@@ -55,4 +58,60 @@ func TestPrintMarshalIndent(t *testing.T) {
 		B int    `json:"b,omitempty"`
 	}
 	PrintlnIndent(S{"hhhh", 111})
+}
+
+func TestDivideIntoGroups(t *testing.T) {
+	tests := map[string]struct {
+		input       []int
+		groupSize   int
+		expected    [][]int
+		expectPanic bool
+	}{
+		"regular division": {
+			input:     []int{1, 2, 3, 4, 5, 6},
+			groupSize: 2,
+			expected:  [][]int{{1, 2}, {3, 4}, {5, 6}},
+		},
+		"with leftover": {
+			input:     []int{1, 2, 3, 4, 5},
+			groupSize: 2,
+			expected:  [][]int{{1, 2}, {3, 4}, {5}},
+		},
+		"single group": {
+			input:     []int{1, 2, 3, 4, 5},
+			groupSize: 5,
+			expected:  [][]int{{1, 2, 3, 4, 5}},
+		},
+		"empty slice": {
+			input:     []int{},
+			groupSize: 2,
+			expected:  [][]int{},
+		},
+		"single element": {
+			input:     []int{1},
+			groupSize: 2,
+			expected:  [][]int{{1}},
+		},
+		"invalid group size": {
+			input:       []int{1, 2, 3, 4, 5},
+			groupSize:   0,
+			expectPanic: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil && !tc.expectPanic {
+					t.Errorf("unexpected panic")
+				} else if r == nil && tc.expectPanic {
+					t.Errorf("expected panic, got none")
+				}
+			}()
+			result := DivideIntoGroups(tc.input, tc.groupSize)
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Errorf("expected %v, got %v", tc.expected, result)
+			}
+		})
+	}
 }

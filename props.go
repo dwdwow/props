@@ -48,3 +48,15 @@ func PrintlnIndent(v any) {
 	}
 	fmt.Println(s)
 }
+
+func DivideIntoGroups[D any](d []D, perGroupNum int) [][]D {
+	n := len(d) / perGroupNum
+	groups := make([][]D, n)
+	for i := 0; i < n; i++ {
+		groups[i] = d[i*perGroupNum : (i+1)*perGroupNum]
+	}
+	if len(d)%perGroupNum != 0 {
+		groups = append(groups, d[n*perGroupNum:])
+	}
+	return groups
+}
