@@ -19,7 +19,7 @@ func NewFanout[D any](outDur time.Duration) *Fanout[D] {
 	}
 }
 
-func (f *Fanout[D]) NewOuter() <-chan D {
+func (f *Fanout[D]) Sub() <-chan D {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 	outer := make(chan D)
@@ -27,14 +27,14 @@ func (f *Fanout[D]) NewOuter() <-chan D {
 	return outer
 }
 
-func (f *Fanout[D]) RemoveOuter(outer <-chan D) {
+func (f *Fanout[D]) Unsub(outer <-chan D) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 	defer func() {
 		recErr := recover()
 		if recErr != nil {
 			// should not be here
-			slog.Error("Fanout: RemoveOuter Recovered", "err", recErr)
+			slog.Error("Fanout: Unsub Recovered", "err", recErr)
 		}
 	}()
 	for i, o := range f.outers {
