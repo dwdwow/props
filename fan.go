@@ -13,9 +13,9 @@ type Fanout[D any] struct {
 	outDur time.Duration
 }
 
-func NewFanout[D any](outDur time.Duration) *Fanout[D] {
+func NewFanout[D any](maxFanoutWaitTime time.Duration) *Fanout[D] {
 	return &Fanout[D]{
-		outDur: outDur,
+		outDur: maxFanoutWaitTime,
 	}
 }
 
@@ -27,7 +27,7 @@ func (f *Fanout[D]) Sub() <-chan D {
 	return outer
 }
 
-func (f *Fanout[D]) Unsub(outer <-chan D) {
+func (f *Fanout[D]) Unsub(ch <-chan D) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 	defer func() {
@@ -38,7 +38,7 @@ func (f *Fanout[D]) Unsub(outer <-chan D) {
 		}
 	}()
 	for i, o := range f.outers {
-		if o == outer {
+		if o == ch {
 			f.outers = slices.Delete(f.outers, i, i+1)
 			close(o)
 			break
