@@ -2,6 +2,7 @@ package props
 
 import (
 	"log/slog"
+	"os"
 	"slices"
 	"sync"
 	"time"
@@ -11,12 +12,40 @@ type Fanout[D any] struct {
 	mux    sync.Mutex
 	outers []chan D
 	outDur time.Duration
+	logger *slog.Logger
 }
 
-func NewFanout[D any](maxFanoutWaitTime time.Duration) *Fanout[D] {
-	return &Fanout[D]{
-		outDur: maxFanoutWaitTime,
+type FanoutOption[D any] func(*Fanout[D])
+
+func WithFanoutDur[D any](outDur time.Duration) FanoutOption[D] {
+	return func(f *Fanout[D]) {
+		f.outDur = outDur
 	}
+}
+
+func WithFanoutLogger[D any](logger *slog.Logger) FanoutOption[D] {
+	return func(f *Fanout[D]) {
+		if logger != nil {
+			f.logger = logger
+		}
+	}
+}
+
+func NewFanout[D any](opts ...FanoutOption[D]) *Fanout[D] {
+	f := &Fanout[D]{
+		outDur: time.Second,
+		logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+	}
+	for _, opt := range opts {
+		opt(f)
+	}
+	return f
+}
+
+func (f *Fanout[D]) ListenerNum() int {
+	f.mux.Lock()
+	defer f.mux.Unlock()
+	return len(f.outers)
 }
 
 func (f *Fanout[D]) Sub() <-chan D {
@@ -25,6 +54,17 @@ func (f *Fanout[D]) Sub() <-chan D {
 	outer := make(chan D)
 	f.outers = append(f.outers, outer)
 	return outer
+}
+
+func (f *Fanout[D]) SubAt(ch chan D) {
+	f.mux.Lock()
+	defer f.mux.Unlock()
+	for _, o := range f.outers {
+		if o == ch {
+			return
+		}
+	}
+	f.outers = append(f.outers, ch)
 }
 
 func (f *Fanout[D]) Unsub(ch <-chan D) {
@@ -67,5 +107,68 @@ func (f *Fanout[D]) Broadcast(d D) {
 				// outer may be closed, should recover
 			}
 		}()
+	}
+}
+
+type Radio[D any] struct {
+	fans *SafeRWMap[string, *Fanout[D]]
+	opts []FanoutOption[D]
+}
+
+func NewRadio[D any](opts ...FanoutOption[D]) *Radio[D] {
+	return &Radio[D]{
+		fans: NewSafeRWMap[string, *Fanout[D]](),
+		opts: opts,
+	}
+}
+
+func (r *Radio[D]) newFanout(channel string) *Fanout[D] {
+	outer := NewFanout(r.opts...)
+	outer.logger = outer.logger.With("radio_channel", channel)
+	return outer
+}
+
+func (r *Radio[D]) Channels() []string {
+	return r.fans.Keys()
+}
+
+func (r *Radio[D]) ListenerNum(channel string) int {
+	fan, ok := r.fans.GetVWithOk(channel)
+	if ok {
+		return fan.ListenerNum()
+	}
+	return 0
+}
+
+func (r *Radio[D]) Sub(channel string) <-chan D {
+	outer := r.fans.GetVWithNew(channel, func() *Fanout[D] {
+		return r.newFanout(channel)
+	})
+	return outer.Sub()
+}
+
+func (r *Radio[D]) Unsub(channel string, ch <-chan D) {
+	fan, ok := r.fans.GetVWithOk(channel)
+	if ok {
+		fan.Unsub(ch)
+	}
+}
+
+func (r *Radio[D]) UnsubAll(ch <-chan D) {
+	r.fans.Iterate(func(key string, fan *Fanout[D]) {
+		fan.Unsub(ch)
+	})
+}
+
+func (r *Radio[D]) SubWithCh(channel string, ch chan D) {
+	r.fans.GetVWithNew(channel, func() *Fanout[D] {
+		return r.newFanout(channel)
+	}).SubAt(ch)
+}
+
+func (r *Radio[D]) Broadcast(channel string, d D) {
+	fan, ok := r.fans.GetVWithOk(channel)
+	if ok {
+		fan.Broadcast(d)
 	}
 }
