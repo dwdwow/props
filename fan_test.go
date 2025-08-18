@@ -35,9 +35,7 @@ func TestFanout(t *testing.T) {
 	}
 }
 
-func TestRadio(t *testing.T) {
-	radio := NewRadio(WithFanoutDur[int](time.Second))
-
+func testRadio(t *testing.T, radio *Radio[int]) {
 	// Test subscribing and broadcasting
 	ch1 := radio.Sub("channel1")
 	ch2 := radio.Sub("channel2")
@@ -101,4 +99,14 @@ func TestRadio(t *testing.T) {
 	if msg != 300 {
 		t.Errorf("Expected 300 on channel2, got %d", msg)
 	}
+}
+
+func TestRadio(t *testing.T) {
+	radio := NewRadio(WithFanoutDur[int](time.Second))
+	testRadio(t, radio)
+}
+
+func TestRadioNoDur(t *testing.T) {
+	radio := NewRadio[int]()
+	testRadio(t, radio)
 }

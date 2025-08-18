@@ -9,11 +9,12 @@ import (
 )
 
 type Fanout[D any] struct {
-	mux    sync.Mutex
-	outers []chan D
-	outDur time.Duration
-	chCap  int
-	logger *slog.Logger
+	mux         sync.Mutex
+	outers      []chan D
+	outDur      time.Duration
+	chCap       int
+	broadcaster func(D)
+	logger      *slog.Logger
 }
 
 type FanoutOption[D any] func(*Fanout[D])
@@ -40,12 +41,16 @@ func WithFanoutChCap[D any](chCap int) FanoutOption[D] {
 
 func NewFanout[D any](opts ...FanoutOption[D]) *Fanout[D] {
 	f := &Fanout[D]{
-		outDur: time.Second,
 		chCap:  1024,
 		logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
 	}
 	for _, opt := range opts {
 		opt(f)
+	}
+	if f.outDur == 0 {
+		f.broadcaster = f.broadcastNoTimer
+	} else {
+		f.broadcaster = f.broadcast
 	}
 	return f
 }
@@ -95,6 +100,10 @@ func (f *Fanout[D]) Unsub(ch <-chan D) {
 }
 
 func (f *Fanout[D]) Broadcast(d D) {
+	f.broadcaster(d)
+}
+
+func (f *Fanout[D]) broadcast(d D) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 	for _, o := range f.outers {
@@ -114,6 +123,23 @@ func (f *Fanout[D]) Broadcast(d D) {
 			case o <- d:
 				// outer may be closed, should recover
 			}
+		}()
+	}
+}
+
+func (f *Fanout[D]) broadcastNoTimer(d D) {
+	f.mux.Lock()
+	defer f.mux.Unlock()
+	for _, o := range f.outers {
+		o := o
+		go func() {
+			defer func() {
+				recErr := recover()
+				if recErr != nil {
+					f.logger.Error("Fanout: Broadcast Recovered", "err", recErr)
+				}
+			}()
+			o <- d
 		}()
 	}
 }
