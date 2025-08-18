@@ -163,6 +163,43 @@ func (m *SafeRWMap[K, V]) GetV(k K) V {
 	return m.Data[k]
 }
 
+func (m *SafeRWMap[K, V]) HasKey(k K) bool {
+	m.RLock()
+	defer m.RUnlock()
+	_, ok := m.Data[k]
+	return ok
+}
+
+func (m *SafeRWMap[K, V]) Keys() []K {
+	m.RLock()
+	defer m.RUnlock()
+	var keys []K
+	for k := range m.Data {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (m *SafeRWMap[K, V]) Iterate(f func(k K, v V)) {
+	m.RLock()
+	defer m.RUnlock()
+	for k, v := range m.Data {
+		f(k, v)
+	}
+}
+
+func (m *SafeRWMap[K, V]) Find(filter func(k K, v V) bool) []V {
+	m.RLock()
+	defer m.RUnlock()
+	var result []V
+	for k, v := range m.Data {
+		if filter(k, v) {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
 type SafeRWCounter struct {
 	SafeRWData[int64]
 }
