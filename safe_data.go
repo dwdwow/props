@@ -138,9 +138,6 @@ func NewSafeRWMap[K comparable, V any]() *SafeRWMap[K, V] {
 func (m *SafeRWMap[K, V]) SetKV(k K, v V) (oldValue V) {
 	m.Lock()
 	defer m.Unlock()
-	if m.Data == nil {
-		m.Data = map[K]V{}
-	}
 	oldValue = m.Data[k]
 	m.Data[k] = v
 	return
@@ -149,9 +146,6 @@ func (m *SafeRWMap[K, V]) SetKV(k K, v V) (oldValue V) {
 func (m *SafeRWMap[K, V]) Delete(k K) V {
 	m.Lock()
 	defer m.Unlock()
-	if m.Data == nil {
-		m.Data = map[K]V{}
-	}
 	delete(m.Data, k)
 	return m.Data[k]
 }
@@ -159,9 +153,6 @@ func (m *SafeRWMap[K, V]) Delete(k K) V {
 func (m *SafeRWMap[K, V]) GetVWithOk(k K) (V, bool) {
 	m.RLock()
 	defer m.RUnlock()
-	if m.Data == nil {
-		m.Data = map[K]V{}
-	}
 	v, ok := m.Data[k]
 	return v, ok
 }
@@ -169,9 +160,6 @@ func (m *SafeRWMap[K, V]) GetVWithOk(k K) (V, bool) {
 func (m *SafeRWMap[K, V]) GetV(k K) V {
 	m.RLock()
 	defer m.RUnlock()
-	if m.Data == nil {
-		m.Data = map[K]V{}
-	}
 	return m.Data[k]
 }
 
