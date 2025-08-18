@@ -74,7 +74,7 @@ func (f *Fanout[D]) Unsub(ch <-chan D) {
 		recErr := recover()
 		if recErr != nil {
 			// should not be here
-			slog.Error("Fanout: Unsub Recovered", "err", recErr)
+			f.logger.Error("Fanout: Unsub Recovered", "err", recErr)
 		}
 	}()
 	for i, o := range f.outers {
@@ -95,14 +95,14 @@ func (f *Fanout[D]) Broadcast(d D) {
 			defer func() {
 				recErr := recover()
 				if recErr != nil {
-					slog.Error("Fanout: Broadcast Recovered", "err", recErr)
+					f.logger.Error("Fanout: Broadcast Recovered", "err", recErr)
 				}
 			}()
 			t := time.NewTimer(f.outDur)
 			defer t.Stop()
 			select {
 			case <-t.C:
-				slog.Error("Fanout: One Channel Cannot Read Data", "duration", f.outDur.Milliseconds())
+				f.logger.Error("Fanout: One Channel Cannot Read Data", "duration", f.outDur.Milliseconds())
 			case o <- d:
 				// outer may be closed, should recover
 			}
