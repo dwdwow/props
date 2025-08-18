@@ -143,6 +143,17 @@ func (m *SafeRWMap[K, V]) SetKV(k K, v V) (oldValue V) {
 	return
 }
 
+func (m *SafeRWMap[K, V]) SetIfNotExists(k K, v V) (currentValue V, exists bool) {
+	m.Lock()
+	defer m.Unlock()
+	currentValue, exists = m.Data[k]
+	if exists {
+		return
+	}
+	m.Data[k] = v
+	return v, false
+}
+
 func (m *SafeRWMap[K, V]) Delete(k K) V {
 	m.Lock()
 	defer m.Unlock()
