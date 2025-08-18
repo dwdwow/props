@@ -71,6 +71,19 @@ func TestSafeRWMap(t *testing.T) {
 		t.Errorf("Expected 1, got %d", v)
 	}
 
+	// Test SetIfNotExists
+	currentValue, exists := m.SetIfNotExists("one", 2)
+	if !exists || currentValue != 1 {
+		t.Errorf("Expected 1, got %d", currentValue)
+	}
+
+	currentValue, exists = m.SetIfNotExists("two", 2)
+	if exists || currentValue != 2 {
+		t.Errorf("Expected 0, got %d", currentValue)
+	}
+
+	m.Delete("two")
+
 	// Test GetVWithOk
 	if v, ok := m.GetVWithOk("one"); !ok || v != 1 {
 		t.Error("GetVWithOk failed")
