@@ -150,6 +150,30 @@ func (m *SafeRWMap[K, V]) Delete(k K) V {
 	return m.Data[k]
 }
 
+func (m *SafeRWMap[K, V]) DeleteMany(keys []K) []V {
+	m.Lock()
+	defer m.Unlock()
+	var result []V
+	for _, k := range keys {
+		result = append(result, m.Data[k])
+		delete(m.Data, k)
+	}
+	return result
+}
+
+func (m *SafeRWMap[K, V]) DeleteManyWithFilter(filter func(k K, v V) bool) []V {
+	m.Lock()
+	defer m.Unlock()
+	var result []V
+	for k, v := range m.Data {
+		if filter(k, v) {
+			result = append(result, v)
+			delete(m.Data, k)
+		}
+	}
+	return result
+}
+
 func (m *SafeRWMap[K, V]) GetVWithOk(k K) (V, bool) {
 	m.RLock()
 	defer m.RUnlock()

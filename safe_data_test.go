@@ -121,6 +121,29 @@ func TestSafeRWMap(t *testing.T) {
 	if len(results) != 1 {
 		t.Errorf("Expected 1 result, got %d", len(results))
 	}
+
+	// Test DeleteMany
+	deleted := m.DeleteMany([]string{"a", "b"})
+	if len(deleted) != 2 {
+		t.Errorf("Expected 2 deleted items, got %d", len(deleted))
+	}
+	if m.HasKey("a") || m.HasKey("b") {
+		t.Error("DeleteMany failed")
+	}
+
+	m.SetKV("a", 1)
+	m.SetKV("b", 2)
+
+	// Test DeleteManyWithFilter
+	deleted = m.DeleteManyWithFilter(func(k string, v int) bool {
+		return v > 1
+	})
+	if len(deleted) != 1 {
+		t.Errorf("Expected 1 deleted item, got %d", len(deleted))
+	}
+	if m.HasKey("b") {
+		t.Error("DeleteManyWithFilter failed")
+	}
 }
 
 func TestSafeRWCounter(t *testing.T) {
