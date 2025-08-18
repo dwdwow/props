@@ -180,3 +180,9 @@ func (r *Radio[D]) Broadcast(channel string, d D) {
 		fan.Broadcast(d)
 	}
 }
+
+func (r *Radio[D]) BroadcastAll(d D) {
+	r.fans.Iterate(func(key string, fan *Fanout[D]) {
+		fan.Broadcast(d)
+	})
+}

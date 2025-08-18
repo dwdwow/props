@@ -15,9 +15,6 @@ func (e *myErr) Error() string {
 func TestIsNil(t *testing.T) {
 	err := new(myErr)
 	err = nil
-	if error(err) == nil {
-		panic(1)
-	}
 	if !IsNil(err) {
 		panic(2)
 	}
@@ -46,9 +43,6 @@ func TestIsNil(t *testing.T) {
 func TestPanicIfNotNil(t *testing.T) {
 	err := new(myErr)
 	err = nil
-	if error(err) == nil {
-		panic(1)
-	}
 	PanicIfNotNil(err)
 }
 

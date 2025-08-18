@@ -87,4 +87,18 @@ func TestRadio(t *testing.T) {
 	if n := radio.ListenerNum("channel2"); n != 0 {
 		t.Errorf("Expected 0 listeners after UnsubAll, got %d", n)
 	}
+
+	ch3 := radio.Sub("channel3")
+	ch4 := radio.Sub("channel4")
+
+	// Test BroadcastAll
+	radio.BroadcastAll(300)
+	msg := <-ch3
+	if msg != 300 {
+		t.Errorf("Expected 300 on channel2, got %d", msg)
+	}
+	msg = <-ch4
+	if msg != 300 {
+		t.Errorf("Expected 300 on channel2, got %d", msg)
+	}
 }
