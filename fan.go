@@ -72,10 +72,8 @@ func (f *Fanout[D]) Sub() <-chan D {
 func (f *Fanout[D]) SubAt(ch chan D) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
-	for _, o := range f.outers {
-		if o == ch {
-			return
-		}
+	if slices.Contains(f.outers, ch) {
+		return
 	}
 	f.outers = append(f.outers, ch)
 }
