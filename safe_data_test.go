@@ -76,6 +76,12 @@ func TestSafeRWMap(t *testing.T) {
 		t.Error("GetVWithOk failed")
 	}
 
+	// Test GetVWithNew
+	v := m.GetVWithNew("two", func() int { return 2 })
+	if v != 2 {
+		t.Errorf("Expected 2, got %d", v)
+	}
+
 	// Test HasKey
 	if !m.HasKey("one") {
 		t.Error("HasKey failed")
@@ -84,6 +90,10 @@ func TestSafeRWMap(t *testing.T) {
 	// Test Delete
 	m.Delete("one")
 	if m.HasKey("one") {
+		t.Error("Delete failed")
+	}
+	m.Delete("two")
+	if m.HasKey("two") {
 		t.Error("Delete failed")
 	}
 
