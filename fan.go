@@ -12,6 +12,7 @@ type Fanout[D any] struct {
 	mux    sync.Mutex
 	outers []chan D
 	outDur time.Duration
+	chCap  int
 	logger *slog.Logger
 }
 
@@ -31,9 +32,16 @@ func WithFanoutLogger[D any](logger *slog.Logger) FanoutOption[D] {
 	}
 }
 
+func WithFanoutChCap[D any](chCap int) FanoutOption[D] {
+	return func(f *Fanout[D]) {
+		f.chCap = chCap
+	}
+}
+
 func NewFanout[D any](opts ...FanoutOption[D]) *Fanout[D] {
 	f := &Fanout[D]{
 		outDur: time.Second,
+		chCap:  1024,
 		logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
 	}
 	for _, opt := range opts {
@@ -51,7 +59,7 @@ func (f *Fanout[D]) ListenerNum() int {
 func (f *Fanout[D]) Sub() <-chan D {
 	f.mux.Lock()
 	defer f.mux.Unlock()
-	outer := make(chan D)
+	outer := make(chan D, f.chCap)
 	f.outers = append(f.outers, outer)
 	return outer
 }
