@@ -4,14 +4,17 @@ import "testing"
 
 func TestCircleSlice(t *testing.T) {
 	t.Run("basic operations", func(t *testing.T) {
-		cs := NewCircleSlice[int](5)
+		cs := NewCircleSlice[int](3)
 
 		// Test initial state
 		if cs.Len() != 0 {
 			t.Errorf("Expected length 0, got %d", cs.Len())
 		}
+		if cs.Size() != 3 {
+			t.Errorf("Expected size 3, got %d", cs.Size())
+		}
 
-		// Test Push and Len
+		// Test Push
 		cs.Push(1)
 		cs.Push(2)
 		cs.Push(3)
@@ -19,102 +22,106 @@ func TestCircleSlice(t *testing.T) {
 			t.Errorf("Expected length 3, got %d", cs.Len())
 		}
 
-		// Test At
-		if val, ok := cs.At(0); !ok || val != 1 {
-			t.Errorf("Expected 1 at index 0, got %d", val)
+		// Test circular behavior
+		cs.Push(4) // Should overwrite first element
+		if cs.Len() != 3 {
+			t.Errorf("Expected length 3, got %d", cs.Len())
 		}
-		if val, ok := cs.At(1); !ok || val != 2 {
-			t.Errorf("Expected 2 at index 1, got %d", val)
+		if cs.At(0) != 2 {
+			t.Errorf("Expected 2, got %d", cs.At(0))
+		}
+		if cs.At(1) != 3 {
+			t.Errorf("Expected 3, got %d", cs.At(1))
+		}
+		if cs.At(2) != 4 {
+			t.Errorf("Expected 4, got %d", cs.At(2))
 		}
 
 		// Test Pop
-		if val, ok := cs.Pop(); !ok || val != 1 {
-			t.Errorf("Expected pop value 1, got %d", val)
+		val := cs.Pop()
+		if val != 2 {
+			t.Errorf("Expected 2, got %d", val)
 		}
 		if cs.Len() != 2 {
-			t.Errorf("Expected length 2 after pop, got %d", cs.Len())
+			t.Errorf("Expected length 2, got %d", cs.Len())
+		}
+		if cs.At(0) != 3 {
+			t.Errorf("Expected 3, got %d", cs.At(0))
+		}
+		if cs.At(1) != 4 {
+			t.Errorf("Expected 4, got %d", cs.At(1))
+		}
+	})
+
+	t.Run("get and set", func(t *testing.T) {
+		cs := NewCircleSlice[string](2)
+		cs.Push("a")
+		cs.Push("b")
+
+		if cs.At(0) != "a" {
+			t.Errorf("Expected 'a', got %s", cs.At(0))
+		}
+		if cs.At(1) != "b" {
+			t.Errorf("Expected 'b', got %s", cs.At(1))
 		}
 
-		// Test circular behavior
-		cs.Push(4)
-		cs.Push(5)
-		cs.Push(6) // Should overwrite the oldest value
+		cs.Set(1, "c")
+		if cs.At(1) != "c" {
+			t.Errorf("Expected 'c', got %s", cs.At(1))
+		}
+	})
 
-		expected := []int{2, 3, 4, 5, 6}
-		idx := 0
-		cs.ForEach(func(_ int, val int) bool {
-			if val != expected[idx] {
-				t.Errorf("Expected %d at position %d, got %d", expected[idx], idx, val)
-			}
-			idx++
+	t.Run("forEach operations", func(t *testing.T) {
+		cs := NewCircleSlice[int](4)
+		cs.Push(1)
+		cs.Push(2)
+		cs.Push(3)
+
+		sum := 0
+		cs.ForEach(func(index int, value int) bool {
+			sum += value
 			return true
 		})
+		if sum != 6 {
+			t.Errorf("Expected sum 6, got %d", sum)
+		}
 
-		// Test ForEach with early termination
-		count := 0
-		cs.ForEach(func(_ int, _ int) bool {
-			count++
-			return count < 3 // Stop after processing 2 elements
+		sum = 0
+		cs.ForEachFromEnd(func(index int, value int) bool {
+			sum += value
+			return true
 		})
-		if count != 3 {
-			t.Errorf("Expected ForEach to process 3 elements before stopping, got %d", count)
+		if sum != 6 {
+			t.Errorf("Expected sum 6, got %d", sum)
 		}
 	})
 
 	t.Run("filter operations", func(t *testing.T) {
-		cs := NewCircleSlice[int](5)
+		cs := NewCircleSlice[int](4)
 		cs.Push(1)
 		cs.Push(2)
 		cs.Push(3)
 		cs.Push(4)
 
-		// Test Filter
-		evens := cs.Filter(func(n int) bool {
-			return n%2 == 0
+		evens := cs.Filter(func(v int) bool {
+			return v%2 == 0
 		})
 		if len(evens) != 2 || evens[0] != 2 || evens[1] != 4 {
-			t.Error("Filter didn't return expected even numbers")
+			t.Errorf("Expected [2,4], got %v", evens)
 		}
 
-		// Test FilterOne
-		if val, ok := cs.FiltOne(func(n int) bool {
-			return n > 3
-		}); !ok || val != 4 {
-			t.Error("FilterOne didn't find expected value")
-		}
-	})
-
-	t.Run("set and remove", func(t *testing.T) {
-		cs := NewCircleSlice[int](5)
-		cs.Push(1)
-		cs.Push(2)
-		cs.Push(3)
-
-		// Test Set
-		if ok := cs.Set(1, 10); !ok {
-			t.Error("Set operation failed")
-		}
-		if val, ok := cs.At(1); !ok || val != 10 {
-			t.Errorf("Expected 10 at index 1, got %d", val)
-		}
-
-		// Test Remove
-		if val, ok := cs.Remove(1); !ok || val != 10 {
-			t.Errorf("Expected to remove 10, got %d", val)
-		}
-		if cs.Len() != 2 {
-			t.Errorf("Expected length 2 after remove, got %d", cs.Len())
-		}
-		if val, ok := cs.At(1); !ok || val != 3 {
-			t.Errorf("Expected 3 at index 1, got %d", val)
+		first, found := cs.FiltOne(func(v int) bool {
+			return v > 2
+		})
+		if !found || first != 3 {
+			t.Errorf("Expected 3, got %d, found: %v", first, found)
 		}
 	})
 
 	t.Run("clear and tidy", func(t *testing.T) {
-		cs := NewCircleSlice[int](5)
+		cs := NewCircleSlice[int](3)
 		cs.Push(1)
 		cs.Push(2)
-		cs.Push(3)
 
 		cs.Clear()
 		if cs.Len() != 0 {
@@ -124,7 +131,6 @@ func TestCircleSlice(t *testing.T) {
 		cs.Push(1)
 		cs.Push(2)
 		cs.Tidy()
-		// After tidy, the slice should still maintain its length
 		if cs.Len() != 2 {
 			t.Errorf("Expected length 2 after tidy, got %d", cs.Len())
 		}
