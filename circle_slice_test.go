@@ -42,12 +42,23 @@ func TestCircleSlice(t *testing.T) {
 
 		expected := []int{2, 3, 4, 5, 6}
 		idx := 0
-		cs.ForEach(func(_ int, val int) {
+		cs.ForEach(func(_ int, val int) bool {
 			if val != expected[idx] {
 				t.Errorf("Expected %d at position %d, got %d", expected[idx], idx, val)
 			}
 			idx++
+			return true
 		})
+
+		// Test ForEach with early termination
+		count := 0
+		cs.ForEach(func(_ int, _ int) bool {
+			count++
+			return count < 3 // Stop after processing 2 elements
+		})
+		if count != 3 {
+			t.Errorf("Expected ForEach to process 3 elements before stopping, got %d", count)
+		}
 	})
 
 	t.Run("filter operations", func(t *testing.T) {

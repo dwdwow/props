@@ -79,13 +79,15 @@ func (c *CircleSlice[T]) Set(index int, value T) (ok bool) {
 	return true
 }
 
-func (c *CircleSlice[T]) ForEach(f func(index int, t T)) {
+func (c *CircleSlice[T]) ForEach(f func(index int, t T) bool) {
 	if c.realFirstIndex == -1 {
 		return
 	}
 	idx := c.realFirstIndex
 	for i := 0; i < c.len(); i++ {
-		f(i, c.circle[idx])
+		if !f(i, c.circle[idx]) {
+			return
+		}
 		idx = (idx + 1) % c.size
 	}
 }
@@ -140,9 +142,10 @@ func (c *CircleSlice[T]) Tidy() {
 	if c.realFirstIndex == -1 {
 		return
 	}
-	c.ForEach(func(index int, t T) {
+	c.ForEach(func(index int, t T) bool {
 		idx := (c.realFirstIndex + index) % c.size
 		c.circle[idx] = *new(T)
+		return true
 	})
 }
 
