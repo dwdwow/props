@@ -7,7 +7,7 @@ type CircleSlice[T any] struct {
 	realLastIndex  int
 }
 
-func NewCirculaSlice[T any](size int) *CircleSlice[T] {
+func NewCircleSlice[T any](size int) *CircleSlice[T] {
 	return &CircleSlice[T]{circle: make([]T, size), size: size, realFirstIndex: -1, realLastIndex: -1}
 }
 

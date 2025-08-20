@@ -4,7 +4,7 @@ import "testing"
 
 func TestCircleSlice(t *testing.T) {
 	t.Run("basic operations", func(t *testing.T) {
-		cs := NewCirculaSlice[int](5)
+		cs := NewCircleSlice[int](5)
 
 		// Test initial state
 		if cs.Len() != 0 {
@@ -51,7 +51,7 @@ func TestCircleSlice(t *testing.T) {
 	})
 
 	t.Run("filter operations", func(t *testing.T) {
-		cs := NewCirculaSlice[int](5)
+		cs := NewCircleSlice[int](5)
 		cs.Push(1)
 		cs.Push(2)
 		cs.Push(3)
@@ -74,7 +74,7 @@ func TestCircleSlice(t *testing.T) {
 	})
 
 	t.Run("set and remove", func(t *testing.T) {
-		cs := NewCirculaSlice[int](5)
+		cs := NewCircleSlice[int](5)
 		cs.Push(1)
 		cs.Push(2)
 		cs.Push(3)
@@ -100,7 +100,7 @@ func TestCircleSlice(t *testing.T) {
 	})
 
 	t.Run("clear and tidy", func(t *testing.T) {
-		cs := NewCirculaSlice[int](5)
+		cs := NewCircleSlice[int](5)
 		cs.Push(1)
 		cs.Push(2)
 		cs.Push(3)
