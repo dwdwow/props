@@ -42,7 +42,7 @@ func TestCircleSlice(t *testing.T) {
 
 		expected := []int{2, 3, 4, 5, 6}
 		idx := 0
-		cs.Iterate(func(_ int, val int) {
+		cs.ForEach(func(_ int, val int) {
 			if val != expected[idx] {
 				t.Errorf("Expected %d at position %d, got %d", expected[idx], idx, val)
 			}
