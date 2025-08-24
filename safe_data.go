@@ -203,8 +203,8 @@ func (m *SafeRWMap[K, V]) GetV(k K) V {
 //	if the key is not found,
 //	it will call the newFunc to create a new value and set it to the map
 func (m *SafeRWMap[K, V]) GetVWithNew(k K, newFunc func() V) V {
-	m.RLock()
-	defer m.RUnlock()
+	m.Lock()
+	defer m.Unlock()
 	v, ok := m.Data[k]
 	if !ok {
 		v = newFunc()
